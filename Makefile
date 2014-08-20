@@ -120,7 +120,7 @@ $(EXECUTABLE): $(OBJS)
 %.o: %.S
 	$(CC) $(CFLAGS) -c $< -o $@
 
-flash:
+flash: all
 	st-flash write $(BIN_IMAGE) 0x8000000
 
 .PHONY: clean

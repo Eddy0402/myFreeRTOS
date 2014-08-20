@@ -22,3 +22,9 @@
 *.elf
 *.lst
 *.hex
+
+# ctags
+tags
+
+# vim
+*.swp
