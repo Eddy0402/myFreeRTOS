@@ -58,17 +58,67 @@ GAME_EventHandler1()
 	}
 }
 
+void USART1_puts(const char* s)
+{
+    while(*s) {
+        while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
+        USART_SendData(USART1, *s);
+        s++;
+    }
+}
+
+static const char*
+itoa(uint16_t n,char *out){
+    char *tmp = out, *start = out;
+    if(n == 0){
+        *tmp++ = '0';
+    }else{
+        while(n != 0){
+            *tmp++ = '0' + n % 10;
+            n /= 10;
+        }
+    }
+    
+    *tmp-- = '\0';
+    //reverse
+    while(tmp > out){
+        // swap
+        *out = *out + *tmp;
+        *tmp = *out - *tmp;
+        *out = *out - *tmp;
+        // next
+        --tmp;
+        ++out;
+    }
+    return start;
+}
+
 void
 GAME_EventHandler2()
 {
-	if( IOE_TP_GetState()->TouchDetected ){
+    static char out[10];
 
-		player2IsReversed = 1;
+    TP_STATE state = *IOE_TP_GetState();
 
-		while( IOE_TP_GetState()->TouchDetected );
+    if( state.TouchDetected ){
+        while( state.TouchDetected ){
+            USART1_puts( "X : " ); 
+            USART1_puts( itoa( state.X , out) );
+            USART1_puts( ", player2 : " );
+            USART1_puts( itoa( player2X , out) );
+            USART1_puts( "\r\n" );
 
-		player2IsReversed = 0;
-	}
+            if( state.X != 239 && state.Y != 0 ){
+
+                if(state.X > player2X + player2W / 2) player2IsReversed = 2;
+                else player2IsReversed = 1;
+
+            }
+            state = *IOE_TP_GetState();
+        }
+	}else{
+        player2IsReversed = 0;
+    }
 }
 
 void
@@ -100,9 +150,9 @@ GAME_Update()
 			player1X = LCD_PIXEL_WIDTH - player1W;
 
 		//Player2
-		if( player2IsReversed )
+		if( player2IsReversed == 1)
 			player2X -= 5;
-		else
+		else if(player2IsReversed == 2)
 			player2X += 5;
 
 		if( player2X <= 0 )
@@ -307,3 +357,4 @@ GAME_Render()
 	LCD_DrawFullRect( ballX, ballY, ballSize, ballSize );
 	LCD_DrawLine( 10, LCD_PIXEL_HEIGHT / 2, LCD_PIXEL_WIDTH - 20, LCD_DIR_HORIZONTAL );
 }
+
